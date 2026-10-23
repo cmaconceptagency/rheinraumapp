@@ -1,0 +1,302 @@
+<meta charset="utf-8">
+<title>Rheinraum App-Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* Layout: links das Handy mit der echten App, rechts das Demo-Bedienfeld; schmal untereinander mit Kurzleiste. */
+  :root {
+    --bg: #eef1f5;
+    --surface: #ffffff;
+    --ink: #13202e;
+    --muted: #5a6878;
+    --line: #d5dce5;
+    --navy: #123d6b;
+    --signal: #f06a0f;
+    --ok: #1d7a3e;
+    --ok-bg: #e3f4e8;
+    --warn: #9a5b00;
+    --warn-bg: #fff2d6;
+    --bad: #b42318;
+    --bad-bg: #fde7e5;
+    --bezel: #1a222c;
+    --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+    --font-body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f151d; --surface: #18212c; --ink: #e8edf3; --muted: #9aa8b8; --line: #2b3746;
+      --navy: #8db7ea; --signal: #ff8a3d; --ok: #6fd18f; --ok-bg: #173323; --warn: #f2c46b; --warn-bg: #3a2c0c;
+      --bad: #ff9c90; --bad-bg: #3d1915; --bezel: #05080c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f151d; --surface: #18212c; --ink: #e8edf3; --muted: #9aa8b8; --line: #2b3746;
+    --navy: #8db7ea; --signal: #ff8a3d; --ok: #6fd18f; --ok-bg: #173323; --warn: #f2c46b; --warn-bg: #3a2c0c;
+    --bad: #ff9c90; --bad-bg: #3d1915; --bezel: #05080c; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 32px;
+  }
+  .page {
+    max-width: 1120px; margin: 0 auto; display: grid; gap: 20px 32px; align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "device intro" "device panel" "foot foot";
+  }
+  .intro { grid-area: intro; display: flex; flex-direction: column; gap: 6px; max-width: 70ch; min-width: 0; }
+  .eyebrow { font: 600 12px/1 var(--font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--signal); }
+  h1 { font: 900 clamp(26px, 4vw, 38px)/1.1 var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+  .intro p { margin: 0; color: var(--muted); }
+  .device {
+    grid-area: device; width: 400px; height: min(820px, calc(100svh - 40px)); min-height: 560px; background: var(--bezel); border-radius: 52px; padding: 14px;
+    box-shadow: 0 30px 60px -20px rgba(10, 25, 45, .45), inset 0 0 0 2px #2c3846; position: sticky; top: max(16px, env(safe-area-inset-top, 0px));
+  }
+  .screen { width: 100%; height: 100%; border-radius: 40px; overflow: hidden; background: #f3f5f8; position: relative; display: flex; }
+  #root { display: flex; flex: 1; min-width: 0; height: 100%; }
+  .loading { position: absolute; inset: 0; display: grid; place-items: center; color: #5a6878; font-weight: 600; pointer-events: none; }
+  .panel { grid-area: panel; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .block { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .block h2 { font: 800 18px/1.2 var(--font-display); margin: 0; }
+  .block p { margin: 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 14px; }
+  .creds { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-family: var(--font-data); font-size: 14px; }
+  .creds span:nth-child(odd) { color: var(--muted); font-family: var(--font-body); }
+  .btn {
+    font: 700 15px/1 var(--font-body); min-height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+    border: 2px solid var(--navy); background: var(--navy); color: var(--surface); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn.secondary { background: transparent; color: var(--navy); }
+  .btn.danger { border-color: var(--bad); background: var(--bad); color: var(--surface); }
+  .btn:focus-visible, .opt:focus-within, .switch:focus-within { outline: 3px solid var(--signal); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .opt { position: relative; border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+  .opt input { position: absolute; opacity: 0; pointer-events: none; }
+  .opt b { font-weight: 700; }
+  .opt small { color: var(--muted); font-size: 13px; line-height: 1.3; }
+  .opt:has(input:checked) { border-color: var(--navy); background: color-mix(in srgb, var(--navy) 10%, transparent); }
+  .switch { display: flex; align-items: center; gap: 12px; cursor: pointer; font-weight: 700; }
+  .switch input { position: absolute; opacity: 0; }
+  .track { width: 52px; height: 30px; border-radius: 999px; background: var(--ok); position: relative; flex: none; transition: background .2s; }
+  .track::after { content: ""; position: absolute; top: 3px; left: 25px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .switch input:checked + .track { background: var(--bad); }
+  .switch input:checked + .track::after { left: 3px; }
+  .server { display: flex; flex-direction: column; gap: 6px; }
+  .entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+  .entry:first-child { border-top: 0; }
+  .entry .t { font-family: var(--font-data); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .pill { font: 700 12px/1 var(--font-body); padding: 5px 9px; border-radius: 999px; white-space: nowrap; align-self: start; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); }
+  .queue { font-weight: 700; }
+  ol.ideas { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .confirm[hidden] { display: none; }
+  .quickbar { display: none; }
+  footer { grid-area: foot; color: var(--muted); font-size: 14px; max-width: 80ch; }
+  .quickbar { grid-area: quick; }
+  @media (max-width: 860px) {
+    body { padding-block: 8px 24px; }
+    .page { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "quick" "device" "panel" "foot"; gap: 10px; }
+    .intro { gap: 2px; }
+    .intro p { display: none; }
+    h1 { font-size: 22px; }
+    .device { width: 100%; height: calc(100svh - 150px); min-height: 520px; border-radius: 28px; padding: 6px; position: relative; top: 0; }
+    .screen { border-radius: 22px; }
+    .quickbar {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+      background: var(--bg); padding-block: 8px; border-bottom: 1px solid var(--line);
+    }
+    .quickbar select { font: 600 15px var(--font-body); min-height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); padding: 0 8px; flex: 1; min-width: 0; }
+    body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+  }
+  @media (prefers-reduced-motion: reduce) { .track, .track::after { transition: none; } }
+</style>
+
+<div class="page">
+  <header class="intro">
+    <span class="eyebrow">Klick-Demo · Beispieldaten · simulierter Server</span>
+    <h1>Rheinraum Zeiterfassung</h1>
+    <p>Das ist die echte Mitarbeiter-App, hier im Browser. Daten, Server und GPS werden simuliert, damit Sie alles gefahrlos ausprobieren können – auch vom Handy aus.</p>
+  </header>
+
+  <div class="quickbar" aria-label="Demo-Schnellsteuerung">
+    <select id="gps-quick" aria-label="Simulierter Standort">
+      <option value="at_site">📍 An der Baustelle</option>
+      <option value="edge">📍 Knapp im Radius</option>
+      <option value="outside">📍 Außerhalb</option>
+      <option value="inaccurate">📍 Ungenau (±250 m)</option>
+      <option value="denied">📍 Keine Berechtigung</option>
+      <option value="off">📍 Ortung aus</option>
+    </select>
+    <label class="switch"><input type="checkbox" id="offline-quick"><span class="track"></span><span id="offline-quick-label">Online</span></label>
+  </div>
+
+    <div class="device" aria-label="Mitarbeiter-App">
+      <div class="screen">
+        <div class="loading" id="loading">App wird geladen …</div>
+        <div id="root"></div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <section class="block">
+        <h2>1 · Anmelden</h2>
+        <div class="creds"><span>E-Mail</span><span>max@musterbau.example</span><span>Passwort</span><span>Baustelle2026!</span></div>
+        <div class="row"><button class="btn" id="fill">Zugangsdaten einfügen</button></div>
+        <p class="muted small">Weitere Konten: erika@musterbau.example (gleiches Passwort). Einladung: neu@musterbau.example mit Code DEMO-2026-CODE.</p>
+      </section>
+
+      <section class="block">
+        <h2>2 · Simulierter Standort</h2>
+        <p class="muted small">Gilt für die nächste Standortprüfung beim Einstempeln. Der Server prüft Abstand, Genauigkeit und Alter.</p>
+        <div class="opts" role="radiogroup" aria-label="Simulierter Standort" id="gps">
+          <label class="opt"><input type="radio" name="gps" value="at_site" checked><b>An der Baustelle</b><small>40 m entfernt, ±12 m</small></label>
+          <label class="opt"><input type="radio" name="gps" value="edge"><b>Knapp im Radius</b><small>3 m innerhalb der Grenze</small></label>
+          <label class="opt"><input type="radio" name="gps" value="outside"><b>Außerhalb</b><small>150 m außerhalb des Radius</small></label>
+          <label class="opt"><input type="radio" name="gps" value="inaccurate"><b>Ungenau</b><small>±250 m (erlaubt: 100 m)</small></label>
+          <label class="opt"><input type="radio" name="gps" value="denied"><b>Keine Berechtigung</b><small>Standortzugriff verweigert</small></label>
+          <label class="opt"><input type="radio" name="gps" value="off"><b>Ortung aus</b><small>GPS am Telefon deaktiviert</small></label>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>3 · Verbindung</h2>
+        <label class="switch"><input type="checkbox" id="offline"><span class="track"></span><span id="offline-label">Online – Buchungen gehen direkt an den Server</span></label>
+        <p class="muted small">Trennen Sie die Verbindung, buchen Sie z. B. eine Pause und verbinden Sie wieder: Die App überträgt automatisch und der Eintrag wird als „ungeprüft“ markiert.</p>
+      </section>
+
+      <section class="block" aria-live="polite">
+        <h2>Was der Server gespeichert hat</h2>
+        <p class="small">Warteschlange auf dem Handy: <span class="queue" id="queue">0 Einträge</span></p>
+        <div class="server" id="server"></div>
+      </section>
+
+      <section class="block">
+        <h2>Testideen</h2>
+        <ol class="ideas">
+          <li>Baustelle wählen → <b>Standort prüfen &amp; einstempeln</b> → Pause → Fortsetzen → Arbeitsende.</li>
+          <li>Standort „Außerhalb“ oder „Ungenau“ wählen und einstempeln: verständliche Ablehnung, „Erneut prüfen“, „Korrektur beantragen“.</li>
+          <li>Offline gehen, Pause buchen, wieder online gehen: automatische Übertragung ohne Duplikate.</li>
+          <li>App neu laden, während die Zeit läuft: der Timer läuft weiter.</li>
+          <li>Unter „Baustellen“ die Entfernung vom Wohnort berechnen (einfache Strecke, simuliert).</li>
+          <li>Unter „Berichte“ einen Bericht mit Foto aus der Galerie anlegen; unter „Mehr“ eine Krankmeldung ohne Diagnose.</li>
+        </ol>
+      </section>
+
+      <section class="block">
+        <h2>Demo zurücksetzen</h2>
+        <p class="muted small">Löscht alle in dieser Demo erfassten Daten und lädt die Beispieldaten neu.</p>
+        <div class="row">
+          <button class="btn secondary" id="reset">Zurücksetzen …</button>
+          <span class="confirm row" id="reset-confirm" hidden>
+            <button class="btn danger" id="reset-yes">Ja, alles zurücksetzen</button>
+            <button class="btn secondary" id="reset-no">Abbrechen</button>
+          </span>
+        </div>
+      </section>
+    </aside>
+
+  <footer>
+    Hinweis: Diese Demo läuft vollständig im Browser. Der echte Server (mit PostgreSQL-Datenbank, Rollen und Admin-Oberfläche)
+    ist im Projekt enthalten, wird hier aber durch eine Simulation ersetzt. Auf dem Telefon nutzt die App das echte GPS.
+    Daten bleiben nur in diesem Browser gespeichert.
+  </footer>
+</div>
+
+<script>
+  // Die App ändert beim Navigieren die Adresse der Seite; vor dem Neuladen die ursprüngliche Adresse wiederherstellen.
+  (function () {
+    var original = location.pathname + location.search;
+    function restore() { try { history.replaceState(history.state, '', original); } catch (e) {} }
+    window.addEventListener('pagehide', restore);
+    window.addEventListener('beforeunload', restore);
+  })();
+</script>
+<script>
+  (function () {
+    var GPS_LABELS = { at_site: 'An der Baustelle', edge: 'Knapp im Radius', outside: 'Außerhalb', inaccurate: 'Ungenau', denied: 'Keine Berechtigung', off: 'Ortung aus' };
+    var VER = { verified: ['Serverbestätigt', 'ok'], unverified: ['Ungeprüft (offline)', 'warn'], corrected: ['Korrigiert', 'ok'], manual: ['Manuell', 'ok'] };
+    function $(id) { return document.getElementById(id); }
+    function fmt(iso) { var d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+    function day(iso) { var d = new Date(iso); return String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.'; }
+    function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    function setNative(input, value) {
+      var setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      setter.call(input, value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    $('fill').addEventListener('click', function () {
+      var inputs = document.querySelectorAll('#root input');
+      var pw = document.querySelector('#root input[type=password]');
+      var mail = null;
+      inputs.forEach(function (i) { if (!mail && i.type !== 'password') mail = i; });
+      if (!mail || !pw) { $('fill').textContent = 'Bitte zuerst abmelden'; setTimeout(function () { $('fill').textContent = 'Zugangsdaten einfügen'; }, 1800); return; }
+      setNative(mail, 'max@musterbau.example');
+      setNative(pw, 'Baustelle2026!');
+    });
+
+    function init(demo) {
+      $('loading').hidden = true;
+      function syncControls() {
+        document.querySelectorAll('input[name=gps]').forEach(function (r) { r.checked = r.value === demo.gps; });
+        $('gps-quick').value = demo.gps;
+        $('offline').checked = demo.offline;
+        $('offline-quick').checked = demo.offline;
+        $('offline-label').textContent = demo.offline ? 'Offline – Buchungen werden auf dem Handy gespeichert' : 'Online – Buchungen gehen direkt an den Server';
+        $('offline-quick-label').textContent = demo.offline ? 'Offline' : 'Online';
+      }
+      $('gps').addEventListener('change', function (e) { demo.setGps(e.target.value); });
+      $('gps-quick').addEventListener('change', function (e) { demo.setGps(e.target.value); });
+      $('offline').addEventListener('change', function (e) { demo.setOffline(e.target.checked); });
+      $('offline-quick').addEventListener('change', function (e) { demo.setOffline(e.target.checked); });
+      $('reset').addEventListener('click', function () { $('reset').hidden = true; $('reset-confirm').hidden = false; });
+      $('reset-no').addEventListener('click', function () { $('reset').hidden = false; $('reset-confirm').hidden = true; });
+      $('reset-yes').addEventListener('click', function () { demo.reset(); });
+
+      function renderServer() {
+        var db = demo.server.db;
+        var today = new Date().toDateString();
+        var sessions = db.sessions.filter(function (s) { return new Date(s.startedAt).toDateString() === today || !s.endedAt; })
+          .sort(function (a, b) { return b.startedAt.localeCompare(a.startedAt); });
+        var html = '';
+        sessions.forEach(function (s) {
+          var u = db.users.find(function (x) { return x.id === s.userId; });
+          var site = db.sites.find(function (x) { return x.id === s.siteId; });
+          var v = VER[s.verification] || [s.verification, 'ok'];
+          var onBreak = s.breaks.some(function (b) { return !b.endedAt; });
+          html += '<div class="entry"><span><b>' + esc(u.firstName + ' ' + u.lastName) + '</b> · ' + esc(site ? site.name : '') + '</span>' +
+            '<span class="pill ' + v[1] + '">' + v[0] + '</span>' +
+            '<span class="t">' + day(s.startedAt) + ' ' + fmt(s.startedAt) + '–' + (s.endedAt ? fmt(s.endedAt) : (onBreak ? 'Pause' : 'läuft')) +
+            ' · ' + s.breaks.length + ' Pause(n)' + (s.startCheck && s.startCheck.distanceM != null ? ' · ' + Math.round(s.startCheck.distanceM) + ' m' : '') + '</span></div>';
+        });
+        var extras = [];
+        var todayReports = db.reports.filter(function (r) { return new Date(r.createdAt).toDateString() === today; }).length;
+        if (todayReports) extras.push(todayReports + ' Bericht(e) heute');
+        if (db.sickNotes.length) extras.push(db.sickNotes.length + ' Krankmeldung(en)');
+        if (db.requests.length) extras.push(db.requests.length + ' Korrekturanfrage(n)');
+        if (!html) html = '<p class="muted small">Heute noch keine Arbeitszeit gebucht.</p>';
+        if (extras.length) html += '<p class="small muted">' + extras.join(' · ') + '</p>';
+        $('server').innerHTML = html;
+        var q = 0;
+        try { q = JSON.parse(localStorage.getItem('rr.queue.items') || '[]').length; } catch (e) {}
+        $('queue').textContent = q === 1 ? '1 Eintrag' : q + ' Einträge';
+        $('queue').style.color = q ? 'var(--warn)' : '';
+      }
+      demo.subscribe(function () { syncControls(); renderServer(); });
+      setInterval(renderServer, 1500);
+      syncControls();
+      renderServer();
+    }
+    if (window.__rrDemo) init(window.__rrDemo);
+    else window.addEventListener('rrdemo:ready', function () { init(window.__rrDemo); });
+  })();
+</script>
+<!--APP_BUNDLE-->

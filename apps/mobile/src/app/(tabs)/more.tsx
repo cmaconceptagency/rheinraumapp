@@ -1,9 +1,10 @@
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { ROLE_LABELS } from '@rheinraum/shared';
 import { useAuth } from '../../auth/AuthContext';
 import { useAppData } from '../../state/AppData';
 import { apiBaseUrl } from '../../api/client';
+import { confirmAction } from '../../lib/dialog';
 import { fmtDate, fmtTime } from '../../lib/format';
 import { Button, Card, H2, ListItem, Notice, P, Screen } from '../../ui/components';
 
@@ -16,17 +17,11 @@ export default function More() {
       pendingCount > 0
         ? `Achtung: ${pendingCount} Eintrag/Einträge wurden noch nicht übertragen und gehen beim Abmelden verloren.`
         : 'Möchten Sie sich abmelden?';
-    Alert.alert('Abmelden', warn, [
-      { text: 'Abbrechen', style: 'cancel' },
-      {
-        text: 'Abmelden',
-        style: 'destructive',
-        onPress: async () => {
-          await clearLocalData();
-          await logout();
-        },
-      },
-    ]);
+    confirmAction({ title: 'Abmelden', message: warn, confirmText: 'Abmelden', destructive: true }).then(async (ok) => {
+      if (!ok) return;
+      await clearLocalData();
+      await logout();
+    });
   };
 
   return (

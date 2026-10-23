@@ -20,7 +20,11 @@ export const openSettings = () => Linking.openSettings();
  * Fragt EINMALIG den aktuellen Standort ab (nur Vordergrund-Berechtigung, keine dauerhafte Überwachung).
  * Es wird kein zwischengespeicherter "letzter Standort" verwendet.
  */
-export async function getCurrentFix(timeoutMs = 20_000): Promise<LocationResult> {
+export async function getCurrentFix(
+  timeoutMs = 20_000,
+  // Nur von der Browser-Demo genutzt (simulierter Standort relativ zur Baustelle); nativ ohne Bedeutung.
+  _target?: { lat: number; lng: number; radiusM: number },
+): Promise<LocationResult> {
   let perm = await Location.getForegroundPermissionsAsync();
   if (perm.status !== 'granted') {
     if (!perm.canAskAgain) return { ok: false, problem: 'PERMISSION_BLOCKED' };

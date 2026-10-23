@@ -19,3 +19,4 @@ apps/mobile/web-build/
 # Backend-Uploads (private Fotos)
 apps/backend/storage/
 .DS_Store
+apps/mobile/dist-demo/

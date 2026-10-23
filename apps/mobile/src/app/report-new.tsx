@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Crypto from 'expo-crypto';
-import { Directory, File, Paths } from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppData } from '../state/AppData';
 import { localDate } from '../lib/format';
+import { showMessage } from '../lib/dialog';
+import { persistPhoto } from '../lib/photos';
 import { Button, Card, Field, Notice, P, Row, Screen } from '../ui/components';
 import { DateTimeField } from '../ui/DateTimeField';
 import { SitePicker } from '../ui/SitePicker';
@@ -31,7 +32,7 @@ export default function ReportNew() {
   const addPhoto = async (source: 'camera' | 'library') => {
     const perm = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('Berechtigung fehlt', source === 'camera' ? 'Bitte den Kamerazugriff erlauben.' : 'Bitte den Zugriff auf Fotos erlauben.');
+      showMessage('Berechtigung fehlt', source === 'camera' ? 'Bitte den Kamerazugriff erlauben.' : 'Bitte den Zugriff auf Fotos erlauben.');
       return;
     }
     const opts: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 0.6, exif: false };
@@ -47,15 +48,10 @@ export default function ReportNew() {
     try {
       const reportClientId = Crypto.randomUUID();
       // Fotos dauerhaft in den App-Speicher kopieren, damit sie auch nach Neustart noch hochgeladen werden können.
-      const dir = new Directory(Paths.document, 'pending-photos');
-      dir.create({ idempotent: true, intermediates: true });
       const copies: { clientId: string; fileUri: string; mime: string }[] = [];
       for (const p of photos) {
         const clientId = Crypto.randomUUID();
-        const ext = p.mime === 'image/png' ? 'png' : p.mime === 'image/heic' ? 'heic' : p.mime === 'image/webp' ? 'webp' : 'jpg';
-        const dest = new File(dir, `${clientId}.${ext}`);
-        await new File(p.uri).copy(dest);
-        copies.push({ clientId, fileUri: dest.uri, mime: p.mime });
+        copies.push({ clientId, fileUri: await persistPhoto(p.uri, p.mime, clientId), mime: p.mime });
       }
       await enqueue({
         kind: 'report',
@@ -64,7 +60,7 @@ export default function ReportNew() {
       for (const c of copies) await enqueue({ kind: 'photo', photo: { ...c, reportClientId } });
       router.back();
     } catch (err) {
-      Alert.alert('Speichern fehlgeschlagen', (err as Error).message);
+      showMessage('Speichern fehlgeschlagen', (err as Error).message);
     } finally {
       setSaving(false);
     }

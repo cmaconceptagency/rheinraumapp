@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { computeSessionTotals, formatClock, formatDuration, VERIFICATION_LABELS } from '@rheinraum/shared';
 import { useAppData, type ActionResult, type AssignedSite } from '../../state/AppData';
 import { getCurrentFix, LOCATION_PROBLEM_TEXT, openSettings, type LocationProblem } from '../../lib/location';
 import { fmtMeters, fmtTime } from '../../lib/format';
+import { confirmAction, showMessage } from '../../lib/dialog';
 import { isOnBreak } from '../../time/localSession';
 import { Badge, Button, Card, H2, Notice, P, Screen, type Tone } from '../../ui/components';
 import { colors, font, radius, space, touch } from '../../ui/theme';
@@ -53,7 +54,7 @@ export default function Stempeluhr() {
 
   const doClockIn = async (site: AssignedSite) => {
     setCheck({ kind: 'locating' });
-    const loc = await getCurrentFix();
+    const loc = await getCurrentFix(20_000, site);
     if (!loc.ok) return setCheck({ kind: 'locationProblem', problem: loc.problem });
     setCheck({ kind: 'sending' });
     handleResult(await clockIn(site, loc.fix));
@@ -63,27 +64,29 @@ export default function Stempeluhr() {
     setBusy(true);
     try {
       const r = await fn();
-      if (!r.ok) Alert.alert('Nicht möglich', r.message);
-      else setCheck({ kind: 'idle' });
+      if (!r.ok) showMessage('Nicht möglich', r.message);
+      // Offline gespeicherte Buchungen ausdrücklich anzeigen, damit nichts als serverbestätigt missverstanden wird.
+      else setCheck(r.offline ? { kind: 'success', offline: true } : { kind: 'idle' });
     } finally {
       setBusy(false);
     }
   };
 
-  const confirmClockOut = () =>
-    Alert.alert('Arbeitsende buchen?', 'Das Ausstempeln ist auch außerhalb der Baustelle möglich.', [
-      { text: 'Abbrechen', style: 'cancel' },
-      {
-        text: 'Arbeitsende',
-        style: 'destructive',
-        onPress: () =>
-          simple(async () => {
-            // Standort beim Ausstempeln ist optional und blockiert nie.
-            const loc = await getCurrentFix(8000).catch(() => null);
-            return clockOut(loc && loc.ok ? loc.fix : null);
-          }),
-      },
-    ]);
+  const confirmClockOut = async () => {
+    const ok = await confirmAction({
+      title: 'Arbeitsende buchen?',
+      message: 'Das Ausstempeln ist auch außerhalb der Baustelle möglich.',
+      confirmText: 'Arbeitsende',
+      destructive: true,
+    });
+    if (!ok) return;
+    await simple(async () => {
+      // Standort beim Ausstempeln ist optional und blockiert nie.
+      const site = sites.find((s) => s.id === session?.siteId);
+      const loc = await getCurrentFix(8000, site).catch(() => null);
+      return clockOut(loc && loc.ok ? loc.fix : null);
+    });
+  };
 
   const status: { label: string; tone: Tone; icon: keyof typeof Ionicons.glyphMap } = !session
     ? { label: 'Nicht eingestempelt', tone: 'neutral', icon: 'ellipse-outline' }
@@ -132,6 +135,9 @@ export default function Stempeluhr() {
           <P muted>Netto-Arbeitszeit heute</P>
         )}
       </Card>
+
+      {/* Rückmeldung direkt unter dem Status, damit sie ohne Scrollen sichtbar ist */}
+      <CheckFeedback check={check} siteId={selected?.id ?? session?.siteId ?? null} onRetry={() => selected && doClockIn(selected)} />
 
       {/* Aktionen */}
       {session ? (
@@ -187,8 +193,6 @@ export default function Stempeluhr() {
           </P>
         </>
       )}
-
-      <CheckFeedback check={check} siteId={selected?.id ?? session?.siteId ?? null} onRetry={() => selected && doClockIn(selected)} />
 
       {pendingCount > 0 && (
         <Card>

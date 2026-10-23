@@ -11,7 +11,8 @@ mit gemeinsamer Backend-API (Node.js/Fastify) und PostgreSQL-Datenbank.
 
 1. [Funktionen](#funktionen)
 2. [Projektstruktur](#projektstruktur)
-3. [Schnellstart (lokal)](#schnellstart-lokal)
+3. [Demo im Browser (ohne Installation)](#demo-im-browser-ohne-installation)
+4. [Schnellstart (lokal)](#schnellstart-lokal)
 4. [App auf dem Handy testen (Expo Go)](#app-auf-dem-handy-testen-expo-go)
 5. [Expo Development Build (falls Expo Go nicht passt)](#expo-development-build)
 6. [Demo-Zugänge](#demo-zugänge)
@@ -72,6 +73,21 @@ mit gemeinsamer Backend-API (Node.js/Fastify) und PostgreSQL-Datenbank.
 ├── docker-compose.yml    Lokale PostgreSQL-Datenbank (inkl. Testdatenbank)
 └── package.json          npm-Workspaces und Sammelbefehle
 ```
+
+## Demo im Browser (ohne Installation)
+
+Für einen schnellen Eindruck gibt es eine Browser-Demo der Mitarbeiter-App: die echte App-Oberfläche, aber mit
+**simuliertem Server, Beispieldaten und simuliertem GPS** (Bedienfeld neben der App: Standort wählen, Verbindung trennen,
+Daten zurücksetzen). Sie ersetzt nicht den Test auf einem echten Handy mit dem echten Backend.
+
+```bash
+npm run demo:build -w @rheinraum/mobile
+# Ergebnis: apps/mobile/dist-demo/rheinraum-demo.html (eine Datei, im Browser öffnen)
+```
+
+Technik: `EXPO_PUBLIC_DEMO=1` aktiviert beim Web-Build `src/demo/setup.web.ts`, das alle API-Aufrufe an den simulierten
+Server `src/demo/mockServer.ts` umleitet (gleiche Fehlercodes und Standortprüfung wie das Backend). Native Builds
+enthalten davon nichts (`setup.ts` ist leer).
 
 ## Schnellstart (lokal)
 

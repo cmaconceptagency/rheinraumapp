@@ -33,11 +33,11 @@ export default function TabsLayout() {
         headerRight: () => <ConnectionBadge />,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: 13, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
         tabBarStyle: { height: 68, paddingTop: 6 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Stempeluhr', tabBarIcon: icon('time') }} />
+      <Tabs.Screen name="index" options={{ title: 'Stempeluhr', tabBarLabel: 'Stempeln', tabBarIcon: icon('time') }} />
       <Tabs.Screen name="sites" options={{ title: 'Baustellen', tabBarIcon: icon('business') }} />
       <Tabs.Screen name="times" options={{ title: 'Zeiten', tabBarIcon: icon('calendar') }} />
       <Tabs.Screen name="reports" options={{ title: 'Berichte', tabBarIcon: icon('document-text') }} />

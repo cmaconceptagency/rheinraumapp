@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from '../lib/secureStore';
 import type { UserDto } from '@rheinraum/shared';
 import { ApiError, NetworkError, request, setTokenProvider } from '../api/client';
 import { readJson, removeKeys, writeJson } from '../lib/storage';

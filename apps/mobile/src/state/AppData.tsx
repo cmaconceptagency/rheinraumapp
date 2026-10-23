@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AppState } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import * as Crypto from 'expo-crypto';
-import { File } from 'expo-file-system';
 import {
   DEFAULT_MAX_ACCURACY_M,
   DEFAULT_MAX_LOCATION_AGE_S,
@@ -14,6 +13,7 @@ import {
 import { ApiError, NetworkError, request } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { kv, readJson, removeKeys, writeJson } from '../lib/storage';
+import { appendPhoto, deletePhoto, photoExists } from '../lib/photos';
 import { OfflineQueue, type Conflict, type ItemOutcome, type LocationPayload, type NewQueueItem, type QueueItem, type TimeOp } from '../sync/queue';
 import { applyPendingOps, fromServer, type LocalSession } from '../time/localSession';
 
@@ -96,19 +96,14 @@ async function executeBatch(items: QueueItem[], onCurrent: (s: WorkSessionDto | 
         await request('/api/me/correction-requests', { body: first.request });
         break;
       case 'photo': {
-        const file = new File(first.photo.fileUri);
-        if (!file.exists) return [{ status: 'rejected', message: 'Fotodatei nicht mehr vorhanden' }];
+        if (!photoExists(first.photo.fileUri)) return [{ status: 'rejected', message: 'Fotodatei nicht mehr vorhanden' }];
         const form = new FormData();
         // Textfelder vor der Datei (vom Server so erwartet).
         form.append('clientId', first.photo.clientId);
         form.append('reportClientId', first.photo.reportClientId);
-        form.append('file', { uri: first.photo.fileUri, name: file.name, type: first.photo.mime } as unknown as Blob);
+        appendPhoto(form, first.photo.fileUri, first.photo.mime);
         await request('/api/me/photos', { form, timeoutMs: 60_000 });
-        try {
-          file.delete();
-        } catch {
-          /* Aufräumen ist optional */
-        }
+        deletePhoto(first.photo.fileUri);
         break;
       }
     }
@@ -193,6 +188,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (status === 'signedIn') refresh().catch(() => undefined);
   }, [status, refresh]);
+
+  // Sicherheitsnetz: wartende Einträge regelmäßig erneut senden, falls ein Verbindungswechsel nicht gemeldet wurde.
+  useEffect(() => {
+    if (status !== 'signedIn') return;
+    const t = setInterval(() => {
+      if (onlineRef.current && queue.list().length > 0) syncNow().catch(() => undefined);
+    }, 30_000);
+    return () => clearInterval(t);
+  }, [status, syncNow]);
 
   const pendingOps = useMemo(() => queue.pendingTimeOps(), [queueVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const session = useMemo(() => applyPendingOps(serverSession, pendingOps), [serverSession, pendingOps]);

@@ -77,7 +77,7 @@ export default function Reports() {
                 {r.photos.map((p) => (
                   <Image
                     key={p.id}
-                    source={{ uri: `${apiBaseUrl()}${p.url}`, headers: authHeaders() }}
+                    source={p.url.startsWith('data:') ? { uri: p.url } : { uri: `${apiBaseUrl()}${p.url}`, headers: authHeaders() }}
                     style={{ width: 96, height: 96, borderRadius: 10, backgroundColor: '#ddd' }}
                     accessibilityLabel="Foto zum Bericht"
                   />
