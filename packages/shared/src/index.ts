@@ -120,7 +120,8 @@ export function evaluateLocation(
   // Standort aus der "Zukunft" (mehr als 30 s) ist unplausibel und wird wie veraltet behandelt.
   if (ageS > rules.maxAgeS || ageS < -30) return { ok: false, code: 'LOCATION_STALE', ...result };
   if (fix.accuracy > rules.maxAccuracyM) return { ok: false, code: 'LOCATION_INACCURATE', ...result };
-  if (distanceM > rules.radiusM) return { ok: false, code: 'OUTSIDE_RADIUS', ...result };
+  // Vergleich auf Zentimeter gerundet, damit Gleitkommarauschen den inklusiven Grenzfall nicht kippt.
+  if (Math.round(distanceM * 100) / 100 > rules.radiusM) return { ok: false, code: 'OUTSIDE_RADIUS', ...result };
   return { ok: true, code: 'OK', ...result };
 }
 
