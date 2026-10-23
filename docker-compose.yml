@@ -1,0 +1,15 @@
+# Lokale Entwicklungsdatenbank. Start: docker compose up -d db
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: handwerk
+      POSTGRES_PASSWORD: handwerk
+      POSTGRES_DB: handwerk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+volumes:
+  pgdata:
