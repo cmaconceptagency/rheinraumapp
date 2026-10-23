@@ -67,7 +67,13 @@ export async function applyCorrection(db: Db, user: AuthUser, sessionId: string,
   return loadSession(db, sessionId);
 }
 
-export async function applyCorrectionInTx(client: pg.PoolClient, user: AuthUser, sessionId: string, input: CorrectionInput) {
+export async function applyCorrectionInTx(
+  client: pg.PoolClient,
+  user: AuthUser,
+  sessionId: string,
+  input: CorrectionInput,
+  opts: { allowNoop?: boolean } = {},
+) {
   {
     const session = await lockVisibleSession(client, user, sessionId);
     const before = await snapshot(client, sessionId);
@@ -114,6 +120,10 @@ export async function applyCorrectionInTx(client: pg.PoolClient, user: AuthUser,
       [sessionId, startedAt, endedAt, siteId, input.note ?? null],
     );
     const after = await snapshot(client, sessionId);
+    const comparable = (x: typeof before) => JSON.stringify({ ...x, verification: undefined });
+    if (!opts.allowNoop && comparable(before) === comparable(after)) {
+      throw new ApiError('VALIDATION', { reason: 'Keine Änderung gegenüber dem bisherigen Stand' });
+    }
     await client.query(
       'INSERT INTO time_corrections (session_id, changed_by, reason, before, after) VALUES ($1, $2, $3, $4, $5)',
       [sessionId, user.id, input.reason.trim(), before, after],

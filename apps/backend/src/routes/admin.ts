@@ -553,7 +553,7 @@ export async function adminRoutes(app: FastifyInstance, deps: AppDeps) {
           reason: why,
           startedAt: cr.requested_start.toISOString(),
           ...(cr.requested_end ? { endedAt: cr.requested_end.toISOString() } : {}),
-        });
+        }, { allowNoop: true });
       } else {
         target = await createManualSession(
           db,

@@ -36,6 +36,19 @@ describe('Zeitkorrekturen mit unveränderbarer Historie', () => {
     expect(c.changedByName).toBe('Anna Admin');
   });
 
+  it('lehnt Korrekturen ohne tatsächliche Änderung ab', async () => {
+    const s = await ctx.db.query('SELECT id, started_at FROM work_sessions WHERE user_id = $1 AND ended_at IS NOT NULL OFFSET 1 LIMIT 1', [
+      ctx.ids.users[DEMO.max],
+    ]);
+    const res = await call('POST', `/api/admin/sessions/${s.rows[0].id}/corrections`, {
+      reason: 'Nur gespeichert, nichts geändert',
+      startedAt: s.rows[0].started_at.toISOString(),
+    });
+    expect(res.statusCode).toBe(400);
+    const v = await ctx.db.query('SELECT verification FROM work_sessions WHERE id = $1', [s.rows[0].id]);
+    expect(v.rows[0].verification).toBe('verified');
+  });
+
   it('die Änderungshistorie kann in der Datenbank nicht verändert oder gelöscht werden', async () => {
     await expect(ctx.db.query(`UPDATE time_corrections SET reason = 'manipuliert'`)).rejects.toThrow(/unveränderbar/);
     await expect(ctx.db.query('DELETE FROM time_corrections')).rejects.toThrow(/unveränderbar/);
