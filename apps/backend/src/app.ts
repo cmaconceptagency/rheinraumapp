@@ -4,6 +4,10 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
+import fastifyStatic from '@fastify/static';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { ERROR_MESSAGES } from '@rheinraum/shared';
 import type { Config } from './config.js';
 import type { Db } from './db/pool.js';
 import { registerErrorHandler } from './errors.js';
@@ -65,6 +69,21 @@ export async function buildApp(
   await app.register(async (r) => meRoutes(r, deps), { prefix: '/api/me' });
   await app.register(async (r) => adminRoutes(r, deps), { prefix: '/api/admin' });
   await app.register(async (r) => photoRoutes(r, deps), { prefix: '/api/photos' });
+
+  // Admin-Weboberfläche unter derselben Adresse (nötig für das httpOnly-Refresh-Cookie mit SameSite=Strict).
+  const adminDir = config.ADMIN_DIST_DIR ? path.resolve(config.ADMIN_DIST_DIR) : null;
+  if (adminDir && existsSync(path.join(adminDir, 'index.html'))) {
+    await app.register(fastifyStatic, { root: adminDir, prefix: '/', wildcard: false, index: ['index.html'] });
+  } else if (adminDir) {
+    app.log.warn(`ADMIN_DIST_DIR=${adminDir} enthält keine index.html – Admin-Oberfläche wird nicht ausgeliefert.`);
+  }
+  app.setNotFoundHandler((req, reply) => {
+    // Seiten der Admin-Oberfläche (z. B. /arbeitszeiten) liefern die Single-Page-App aus.
+    if (adminDir && req.method === 'GET' && !req.url.startsWith('/api/') && existsSync(path.join(adminDir, 'index.html'))) {
+      return reply.type('text/html').sendFile('index.html');
+    }
+    return reply.status(404).send({ error: { code: 'NOT_FOUND', message: ERROR_MESSAGES.NOT_FOUND } });
+  });
 
   return app;
 }

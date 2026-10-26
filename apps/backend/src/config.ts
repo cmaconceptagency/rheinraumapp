@@ -21,6 +21,8 @@ const schema = z.object({
   ROUTING_PROVIDER: z.enum(['simulated', 'osrm']).default('simulated'),
   OSRM_URL: z.string().url().default('https://router.project-osrm.org'),
   LOG_LEVEL: z.string().default('info'),
+  /** Optional: gebaute Admin-Weboberfläche (apps/admin/dist) unter derselben Adresse ausliefern. */
+  ADMIN_DIST_DIR: z.string().optional(),
 });
 
 export type Config = z.infer<typeof schema>;

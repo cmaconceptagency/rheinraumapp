@@ -1,0 +1,48 @@
+# Render-Blueprint: richtet Server (inkl. Admin-Weboberfläche), PostgreSQL und Fotospeicher ein.
+# In Render: New → Blueprint → dieses Repository wählen → Apply.
+# Jeder Push auf den verbundenen Branch wird automatisch neu ausgeliefert.
+
+databases:
+  - name: rheinraum-db
+    region: frankfurt
+    plan: basic-256mb
+    databaseName: rheinraum
+    user: rheinraum
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: rheinraum
+    runtime: node
+    region: frankfurt
+    plan: starter
+    buildCommand: npm ci --include=dev && npm run build
+    # Wendet Migrationen an, legt bei leerer Datenbank Beispieldaten an (nur mit ALLOW_DEMO_SEED=true) und startet den Server.
+    startCommand: npm run start:render
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: photos
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rheinraum-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_DIST_DIR
+        value: ../admin/dist
+      - key: STORAGE_DIR
+        value: /var/data/photos
+      - key: ROUTING_PROVIDER
+        value: simulated
+      # Testumgebung mit erfundenen Beispieldaten. Vor echten Mitarbeiterdaten auf "false" setzen
+      # und die Demo-Konten in der Admin-Oberfläche deaktivieren.
+      - key: ALLOW_DEMO_SEED
+        value: "true"

@@ -118,3 +118,11 @@ describe('Entfernung Wohnort → Baustelle (austauschbare Routing-Schnittstelle)
     expect((await ctx.app.inject({ method: 'GET', url: `/api/me/sites/${bonn.id}/distance`, headers: auth(max) })).statusCode).toBe(404);
   });
 });
+
+describe('Unbekannte Pfade', () => {
+  it('liefert für unbekannte API-Pfade das einheitliche Fehlerformat', async () => {
+    const res = await ctx.app.inject({ method: 'GET', url: '/api/gibt-es-nicht' });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error.code).toBe('NOT_FOUND');
+  });
+});

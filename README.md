@@ -12,7 +12,8 @@ mit gemeinsamer Backend-API (Node.js/Fastify) und PostgreSQL-Datenbank.
 1. [Funktionen](#funktionen)
 2. [Projektstruktur](#projektstruktur)
 3. [Demo im Browser (ohne Installation)](#demo-im-browser-ohne-installation)
-4. [Schnellstart (lokal)](#schnellstart-lokal)
+4. [Online stellen mit Render](#online-stellen-mit-render)
+5. [Schnellstart (lokal)](#schnellstart-lokal)
 4. [App auf dem Handy testen (Expo Go)](#app-auf-dem-handy-testen-expo-go)
 5. [Expo Development Build (falls Expo Go nicht passt)](#expo-development-build)
 6. [Demo-Zugänge](#demo-zugänge)
@@ -88,6 +89,26 @@ npm run demo:build -w @rheinraum/mobile
 Technik: `EXPO_PUBLIC_DEMO=1` aktiviert beim Web-Build `src/demo/setup.web.ts`, das alle API-Aufrufe an den simulierten
 Server `src/demo/mockServer.ts` umleitet (gleiche Fehlercodes und Standortprüfung wie das Backend). Native Builds
 enthalten davon nichts (`setup.ts` ist leer).
+
+## Online stellen mit Render
+
+Das Repository enthält einen Render-Blueprint (`render.yaml`, Region Frankfurt): ein Web-Service für API **und**
+Admin-Oberfläche, eine PostgreSQL-Datenbank und 1 GB Speicher für Fotos.
+
+1. Im Render-Dashboard oben rechts **New → Blueprint** wählen.
+2. GitHub verbinden (falls noch nicht geschehen) und das Repository **rheinraumapp** auswählen.
+3. Render zeigt die erkannten Teile (`rheinraum`, `rheinraum-db`). Auf **Deploy Blueprint** bzw. **Apply** klicken.
+4. Warten, bis der Dienst `rheinraum` auf **Live** steht (erster Build ca. 5–10 Minuten).
+5. Die angezeigte Adresse öffnen, z. B. `https://rheinraum.onrender.com` → Admin-Anmeldung mit den Demo-Zugängen.
+
+Danach wird jeder Push auf den verbundenen Branch automatisch ausgeliefert. Beim Start werden Migrationen angewendet;
+Beispieldaten nur in eine leere Datenbank und nur solange `ALLOW_DEMO_SEED=true` gesetzt ist.
+
+**Achtung:** Die Demo-Passwörter stehen in dieser README. Vor echten Mitarbeiterdaten `ALLOW_DEMO_SEED` auf `false`
+setzen und die Demo-Konten in der Admin-Oberfläche deaktivieren.
+
+Für die Handy-App die Render-Adresse als API eintragen: `EXPO_PUBLIC_API_URL=https://<ihre-adresse>.onrender.com`
+(siehe `apps/mobile/.env.example`).
 
 ## Schnellstart (lokal)
 

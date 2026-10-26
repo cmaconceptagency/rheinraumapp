@@ -173,9 +173,10 @@ export async function seed(connectionString: string, opts: { reset?: boolean; lo
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('Beispieldaten werden in Produktion nicht angelegt.');
-    process.exit(1);
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+    // Beim Serverstart in Produktion kein Fehler – es werden einfach keine Beispieldaten angelegt.
+    console.log('Beispieldaten übersprungen (NODE_ENV=production, ALLOW_DEMO_SEED nicht gesetzt).');
+    process.exit(0);
   }
   const url = process.env.DATABASE_URL;
   if (!url) {

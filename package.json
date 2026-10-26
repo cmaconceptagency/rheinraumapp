@@ -2,7 +2,7 @@
   "name": "rheinraum",
   "private": true,
   "version": "0.1.0",
-  "description": "Mitarbeiter-App (Expo) und Admin-Weboberfläche für Handwerksbetriebe mit gemeinsamer Backend-API",
+  "description": "Mitarbeiter-App (Expo) und Admin-Weboberfl\u00e4che f\u00fcr Handwerksbetriebe mit gemeinsamer Backend-API",
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -16,7 +16,8 @@
     "dev:mobile": "npm run start -w @rheinraum/mobile",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "start:render": "npm run start:render -w @rheinraum/backend"
   },
   "engines": {
     "node": ">=20.19"
